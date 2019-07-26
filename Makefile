@@ -8,4 +8,4 @@ push:
 	sh docker-push.sh
 
 clean:
-	docker rmi azp-agent-autoscaler:dev
+	docker rmi azp-agent:dev

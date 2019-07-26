@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   lsb-release \
   make \
   net-tools \
+  netcat \
   nmap \
   openssh-client \
   openssl \
@@ -57,7 +58,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   g++ \
   gcc
 
+ENV clang /usr/bin/clang
+ENV c++ /usr/bin/cpp
 ENV cpp /usr/bin/cpp
+ENV g++ /usr/bin/g++
+ENV gpp /usr/bin/g++
+ENV gcc /usr/bin/gcc
 
 # Java/JVM languages utils
 FROM cplusplus AS java
@@ -71,8 +77,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   openjdk-8-jdk \
   openjdk-11-jre \
   openjdk-11-jdk \
-  scala \
-  tomcat9
+  scala
 
 ENV ant /usr/bin/ant
 ENV clojure /usr/bin/clojure
@@ -101,6 +106,8 @@ RUN wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsof
   && apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
 
 ENV dotnet /usr/bin/dotnet
+ENV nuget /usr/bin/nuget
+ENV powershell /usr/bin/pwsh
 
 # Go utils
 FROM dotnet AS golang_download
@@ -135,6 +142,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV python /usr/bin/python3
 ENV python2 /usr/bin/python2
 ENV python2 /usr/bin/python3
+ENV pip /usr/bin/pip3
 ENV pip3 /usr/bin/pip3
 
 RUN python3 -m pip install \
@@ -150,10 +158,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   cjs \
   gjs \
   nodejs \
-  npm \
-  phantomjs
+  npm
 
-ENV node /usr/bin/node
+ENV node /usr/bin/nodejs
+ENV nodejs /usr/bin/nodejs
+ENV npm /usr/bin/npm
 
 # Ruby utils
 FROM js AS ruby
@@ -162,6 +171,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   gem \
   ruby
 
+ENV gem /usr/bin/gem
 ENV ruby /usr/bin/ruby
 
 # Haskell utils
@@ -170,13 +180,23 @@ FROM ruby AS haskell
 RUN apt-get update && apt-get install -y --no-install-recommends \
   haskell-platform
 
+ENV ghc /usr/bin/ghc
 ENV haskell /usr/bin/ghc
 
 # Docker utils
-FROM ruby AS docker
+FROM haskell AS docker_download
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  docker.io
+ENV DOCKER_VERSION 18.09.8
+RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz
+RUN tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local
+
+FROM haskell AS docker
+
+COPY --from=docker_download /usr/local/docker /usr/local/docker
+
+ENV PATH $PATH:/usr/local/docker
+
+ENV docker /usr/bin/docker/docker
 
 # Kubernetes utils
 FROM docker AS k8s_download
@@ -201,22 +221,31 @@ ENV helm /usr/local/bin/helm
 FROM k8s AS db
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  #mongodb-clients \
-  mongo-tools \
+  mongodb-clients \
   mysql-client \
   #postgresql-client-11 \
   postgresql-client-10 \
   sqlite3
 
-# Cloud provider utils
-FROM db AS cloud
+ENV mongo /usr/bin/mongo
+ENV mongodb /usr/bin/mongo
+ENV mysql /usr/bin/mysql
+ENV psql /usr/bin/psql
+ENV postgresql /usr/bin/psql
+ENV sqlite /use/bin/sqlite3
+ENV sqlite3 /use/bin/sqlite3
 
+# Cloud provider utils
 ## AWS CLI
+FROM db AS awscli
 RUN python3 -m pip install \
   awscli
 
-## Azure CLI
+ENV aws /usr/local/bin/aws
+ENV awscli /usr/local/bin/aws
 
+## Azure CLI
+FROM awscli AS azcli
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
     gpg --dearmor | \
     sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null && \
@@ -225,10 +254,32 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
     apt-get update && apt-get install -y --no-install-recommends azure-cli && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
 
+ENV az /usr/bin/az
+ENV azure /usr/bin/az
+ENV azurecli /usr/bin/az
+
 ## GCE CLI
+FROM azcli AS gcecli
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+    sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - && \
+    apt-get update && apt-get install -y --no-install-recommends google-cloud-sdk && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
+
+ENV gce /usr/bin/gcloud
+ENV gcloud /usr/bin/gcloud
 
 # Cleanup
 
-FROM cloud AS final
+FROM gcecli AS final
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
+
+WORKDIR /azp
+
+COPY start.sh /azp/start.sh
+
+RUN chmod +x /azp/start.sh
+
+CMD ["/azp/start.sh"]
