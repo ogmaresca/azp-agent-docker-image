@@ -18,10 +18,11 @@ The `start.sh` script comes from [https://docs.microsoft.com/en-us/azure/devops/
 
 The Docker images are hosted in the [Docker Hub repository](https://hub.docker.com/r/gmaresca/azure-pipeline-agent) `docker.io/gmaresca/azure-pipeline-agent`.
 
-| Tag                  | Size   | Notes                                                            | Dockerfile                       |
-| -------------------- | ------ | ---------------------------------------------------------------- | -------------------------------- |
-| ubuntu-18.04-minimal | 207MB  | The bare minimum required to run the agents.                     | [Dockerfile](minimal/Dockerfile) |
-| ubuntu-18.04-base    | 1.92GB | The image with all non-Python-language-specific tools installed. | [Dockerfile](base/Dockerfile)    |
+| Tag                  | Size   | Notes                                                                | Dockerfile                       |
+| -------------------- | ------ | -------------------------------------------------------------------- | -------------------------------- |
+| ubuntu-18.04-minimal | 207MB  | The bare minimum required to run the agents.                         | [Dockerfile](minimal/Dockerfile) |
+| ubuntu-18.04-base    | 1.92GB | The image with all non-language-specific tools and Python installed. | [Dockerfile](base/Dockerfile)    |
+| ubuntu-18.04-base    | 2.07GB | The image with dotnet tools installed.                               | [Dockerfile](dotnet/Dockerfile)  |
 
 
 ## Installation
@@ -195,16 +196,22 @@ The `base` image has Python installed to install `yq` and `awscli`.
 
 ### C#
 
-* dotnet-host
-* dotnet-runtime-2.1
-* dotnet-runtime-2.2
-* dotnet-sdk-2.1
-* dotnet-sdk-2.2
+* .NET Core SDK 2.1
+* .NET Core SDK 2.2
+* coverlet.console (`dotnet` tool)
+* dotnet-sqldb (`dotnet` tool)
+* GitVersion.Tool (`dotnet` tool)
+* nbgv (`dotnet` tool)
 * nuget
 
 #### Environment Variables
 
+* coverlet
 * dotnet
+* dotnet-gitversion
+* dotnet-sqldb
+* dotnet-stryker
+* nbgv
 * nuget
 
 ### Go

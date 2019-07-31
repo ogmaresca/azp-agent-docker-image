@@ -1,4 +1,7 @@
-FROM gmaresca/azure-pipeline-agent:ubuntu-18.04-minimal AS build
+ARG DISTRO=ubuntu
+ARG DISTRO_VERSION=18.04
+ARG DISTRO_FRIENDLY=bionic
+FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal AS build
 
 # Install common packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -87,7 +90,7 @@ ENV POWERSHELL_VERSION 6.2.2
 RUN curl -LO https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz && \
   mkdir -p /usr/local/powershell && \
   tar -zxvf powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz -C /usr/local/powershell && \
-  ln /usr/local/powershell/pwsh /usr/local/powershell/powershell && \
+  ln -s /usr/local/powershell/pwsh /usr/local/powershell/powershell && \
   chmod +x /usr/local/powershell/pwsh && \
   chmod +x /usr/local/powershell/powershell
 

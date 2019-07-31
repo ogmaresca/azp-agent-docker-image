@@ -1,4 +1,7 @@
-FROM ubuntu:18.04 AS build
+ARG DISTRO=ubuntu
+ARG DISTRO_VERSION=18.04
+ARG DISTRO_FRIENDLY=bionic
+FROM ${DISTRO}:${DISTRO_VERSION} AS build
 
 # Remove need for adding -y to apt-get install commads
 ENV DEBIAN_FRONTEND noninteractive
