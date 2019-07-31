@@ -9,3 +9,5 @@ push:
 
 clean:
 	docker rmi azp-agent:dev
+tag:
+	./git-tag.sh
