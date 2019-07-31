@@ -21,8 +21,8 @@ The Docker images are hosted in the [Docker Hub repository](https://hub.docker.c
 | Tag                  | Size   | Notes                                                                | Dockerfile                       |
 | -------------------- | ------ | -------------------------------------------------------------------- | -------------------------------- |
 | ubuntu-18.04-minimal | 207MB  | The bare minimum required to run the agents.                         | [Dockerfile](minimal/Dockerfile) |
-| ubuntu-18.04-base    | 1.92GB | The image with all non-language-specific tools and Python installed. | [Dockerfile](base/Dockerfile)    |
-| ubuntu-18.04-base    | 2.07GB | The image with dotnet tools installed.                               | [Dockerfile](dotnet/Dockerfile)  |
+| ubuntu-18.04-base    | 2.24GB | The image with all non-language-specific tools and Python installed. | [Dockerfile](base/Dockerfile)    |
+| ubuntu-18.04-dotnet  | 4.11GB | The image with dotnet tools installed.                               | [Dockerfile](dotnet/Dockerfile)  |
 
 
 ## Installation

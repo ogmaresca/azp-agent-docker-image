@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:2.2-${DISTRO_FRIENDLY} AS dotnet22_offici
 
 FROM mcr.microsoft.com/dotnet/core/sdk:2.1.801-${DISTRO_FRIENDLY} AS dotnet21_official
 
-FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal AS aptget
+FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-base AS aptget
 
 # Install .NET dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

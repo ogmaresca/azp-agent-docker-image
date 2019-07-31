@@ -84,39 +84,32 @@ RUN python3 -m pip install \
   yq
 
 # Powershell utils
-FROM python AS powershell_download
+FROM python AS powershell
 
 ENV POWERSHELL_VERSION 6.2.2
 RUN curl -LO https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz && \
-  mkdir -p /usr/local/powershell && \
-  tar -zxvf powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz -C /usr/local/powershell && \
-  ln -s /usr/local/powershell/pwsh /usr/local/powershell/powershell && \
-  chmod +x /usr/local/powershell/pwsh && \
-  chmod +x /usr/local/powershell/powershell
+  mkdir -p /usr/local/bin/powershell && \
+  tar -zxvf powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz -C /usr/local/bin/powershell && \
+  chmod +x /usr/local/bin/powershell/pwsh && \
+  ln -s /usr/local/bin/powershell/pwsh /usr/local/bin/powershell/powershell && \
+  rm powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz
 
-FROM powershell_download AS powershell
+ENV PATH $PATH:/usr/local/bin/powershell
 
-COPY --from=powershell_download /usr/local/powershell /usr/local/powershell
-
-ENV PATH $PATH:/usr/local/powershell
-
-ENV pwsh /usr/bin/pwsh
-ENV powershell /usr/bin/powershell
+ENV pwsh /usr/local/bin/powershell/pwsh
+ENV powershell /usr/local/bin/powershell/powershell
 
 # Docker utils
-FROM powershell AS docker_download
+FROM powershell AS docker
 
 ENV DOCKER_VERSION 18.09.8
 RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz && \
-  tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local
+  tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local/bin && \
+  rm docker-${DOCKER_VERSION}.tgz
 
-FROM powershell AS docker
+ENV PATH $PATH:/usr/local/bin/docker
 
-COPY --from=docker_download /usr/local/docker /usr/local/docker
-
-ENV PATH $PATH:/usr/local/docker
-
-ENV docker /usr/bin/docker/docker
+ENV docker /usr/local/bin/docker/docker
 
 # Kubernetes utils
 FROM docker AS k8s_download
@@ -132,7 +125,7 @@ RUN curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   chmod +x ./linux-amd64/helm && \
   mv ./linux-amd64/helm /usr/local/bin/helm
 
-FROM python AS k8s
+FROM docker AS k8s
 
 COPY --from=k8s_download /usr/local/bin/kubectl /usr/local/bin/kubectl
 ENV kubectl /usr/local/bin/kubectl
