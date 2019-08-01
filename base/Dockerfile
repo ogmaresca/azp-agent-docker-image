@@ -1,7 +1,14 @@
+ARG AZP_AGENT_IMAGE_VERSION=v1
 ARG DISTRO=ubuntu
 ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
-FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal AS build
+
+ARG POWERSHELL_VERSION=6.2.2
+ARG DOCKER_VERSION=18.09.8
+ARG KUBECTL_VERSION=1.15.1
+ARG HELM_VERSION=2.14.2
+
+FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal-${AZP_AGENT_IMAGE_VERSION} AS build
 
 # Install common packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -86,7 +93,6 @@ RUN python3 -m pip install \
 # Powershell utils
 FROM python AS powershell
 
-ENV POWERSHELL_VERSION 6.2.2
 RUN curl -LO https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz && \
   mkdir -p /usr/local/bin/powershell && \
   tar -zxvf powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz -C /usr/local/bin/powershell && \
@@ -102,7 +108,6 @@ ENV powershell /usr/local/bin/powershell/powershell
 # Docker utils
 FROM powershell AS docker
 
-ENV DOCKER_VERSION 18.09.8
 RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz && \
   tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local/bin && \
   rm docker-${DOCKER_VERSION}.tgz
@@ -114,12 +119,10 @@ ENV docker /usr/local/bin/docker/docker
 # Kubernetes utils
 FROM docker AS k8s_download
 
-ENV KUBECTL_VERSION 1.15.1
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
   chmod +x ./kubectl && \
   mv ./kubectl /usr/local/bin/kubectl
 
-ENV HELM_VERSION 2.14.2
 RUN curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   tar -zxvf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   chmod +x ./linux-amd64/helm && \

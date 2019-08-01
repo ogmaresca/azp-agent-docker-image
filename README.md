@@ -23,6 +23,7 @@ The Docker images are hosted in the [Docker Hub repository](https://hub.docker.c
 | ubuntu-18.04-minimal | 207MB  | The bare minimum required to run the agents.                         | [Dockerfile](minimal/Dockerfile) |
 | ubuntu-18.04-base    | 2.24GB | The image with all non-language-specific tools and Python installed. | [Dockerfile](base/Dockerfile)    |
 | ubuntu-18.04-dotnet  | 4.11GB | The image with dotnet tools installed.                               | [Dockerfile](dotnet/Dockerfile)  |
+| ubuntu-18.04-java    | 3.07GB | The image with Java tools installed.                                 | [Dockerfile](java/Dockerfile)    |
 
 
 ## Installation
@@ -176,14 +177,25 @@ The `base` image has Python installed to install `yq` and `awscli`.
 ### Java
 
 * ant
-* clojure
+* clojure (lein)
 * gradle
 * maven
-* openjdk-8-jre
-* openjdk-8-jdk
-* openjdk-11-jre
-* openjdk-11-jdk
+* openjdk
+* sbt
 * scala
+
+#### Versions
+
+##### v1
+
+* Ant 1.10.6
+* Gradle 5.5.1
+* Lein 2.9.1
+* Maven 3.6.1
+* OpenJDK 8 JDK
+* OpenJDK 12 JDK
+* Scala 2.13.0
+* sbt 1.2.8
 
 #### Environment Variables
 
@@ -191,18 +203,26 @@ The `base` image has Python installed to install `yq` and `awscli`.
 * clojure
 * gradle
 * java
+* lein
 * maven
+* mvn
+* sbt
 * scala
 
 ### C#
 
-* .NET Core SDK 2.1
-* .NET Core SDK 2.2
+* .NET Core SDK
 * coverlet.console (`dotnet` tool)
 * dotnet-sqldb (`dotnet` tool)
 * GitVersion.Tool (`dotnet` tool)
 * nbgv (`dotnet` tool)
-* nuget
+
+#### Versions
+
+##### v1
+
+* .NET Core SDK 2.1.801
+* .NET Core SDK 2.2.401
 
 #### Environment Variables
 

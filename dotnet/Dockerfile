@@ -1,12 +1,17 @@
+ARG AZP_AGENT_IMAGE_VERSION=v1
+ARG AZP_AGENT_BASE_IMAGE=base
+
 ARG DISTRO=ubuntu
 ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
 
-FROM mcr.microsoft.com/dotnet/core/sdk:2.2-${DISTRO_FRIENDLY} AS dotnet22_official
+ARG DOTNET_CURRENT_VERSION=2.2.401
+ARG DOTNET_LTS_VERSION=2.1.801
 
-FROM mcr.microsoft.com/dotnet/core/sdk:2.1.801-${DISTRO_FRIENDLY} AS dotnet21_official
+FROM mcr.microsoft.com/dotnet/core/sdk:${DOTNET_CURRENT_VERSION}-${DISTRO_FRIENDLY} AS dotnet_current_official
+FROM mcr.microsoft.com/dotnet/core/sdk:${DOTNET_LTS_VERSION}-${DISTRO_FRIENDLY} AS dotnet_lts_official
 
-FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-base AS aptget
+FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-${AZP_AGENT_BASE_IMAGE}-${AZP_AGENT_IMAGE_VERSION} AS aptget
 
 # Install .NET dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,8 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Dotnet
 FROM aptget AS dotnet
 
-COPY --from=dotnet22_official /usr/share/dotnet /usr/share/dotnet
-COPY --from=dotnet21_official /usr/share/dotnet/sdk/2.1.801 /usr/share/dotnet/sdk/2.1.801
+COPY --from=dotnet_current_official /usr/share/dotnet/sdk /usr/share/dotnet
+COPY --from=dotnet_lts_official /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION} /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION}
 RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 ENV DOTNET_ROOT /usr/share/dotnet

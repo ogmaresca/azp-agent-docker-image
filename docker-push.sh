@@ -1,19 +1,53 @@
 #!/bin/bash
 
-FIRST_ARG=$1
+BUILD_PROPERTIES_FILE='build.properties'
 
-BASE_TAG='ubuntu-18.04'
+if [ ! -f "$BUILD_PROPERTIES_FILE" ]
+then
+	echo "Properties file $BUILD_PROPERTIES_FILE was not found" 1>&2
+	exit 1
+fi
+
+AZP_AGENT_IMAGE_VERSION=''
+DISTRO=''
+DISTRO_VERSION=''
+
+while IFS='=' read -r KEY VALUE
+do
+	if [ ! -z "$KEY" ] && [ ! -z "${KEY:0:1}" ] && [ "${KEY:0:1}" != "#" ]
+	then
+		if [ "$KEY" == 'AZP_AGENT_IMAGE_VERSION' ]; then
+			AZP_AGENT_IMAGE_VERSION=$VALUE
+		elif [ "$KEY" == 'DISTRO' ]; then
+			DISTRO=$VALUE
+		elif [ "$KEY" == 'DISTRO_VERSION' ]; then
+			DISTRO_VERSION=$VALUE
+		fi
+	fi
+done < $BUILD_PROPERTIES_FILE
+
+FIRST_ARG=$1
 
 TAG_VERSIONS=(
 	minimal
 	base
 	dotnet
+	java
 )
 
-AZP_AGENT_VERSION=$(cat version)
+# Update this whenever uploading new versions
+AZP_AGENT_VERSION='v1'
 
-if [ -z "$AZP_AGENT_VERSION" ]
-then
+if [ -z "$AZP_AGENT_IMAGE_VERSION" ]; then
+	echo "AZP_AGENT_IMAGE_VERSION was not set" 1>&2
+	exit 1
+fi
+if [ -z "$DISTRO" ]; then
+	echo "DISTRO was not set" 1>&2
+	exit 1
+fi
+if [ -z "$DISTRO_VERSION" ]; then
+	echo "DISTRO_VERSION was not set" 1>&2
 	exit 1
 fi
 
@@ -21,12 +55,13 @@ BUILD_IMAGE='gmaresca/azure-pipeline-agent'
 
 for IMAGE_TAG in ${TAG_VERSIONS[@]}
 do
-	DEV_IMAGE_TAG="${BASE_TAG}-${IMAGE_TAG}-dev"
-	FULL_IMAGE_TAG="${BASE_TAG}-${IMAGE_TAG}-${AZP_AGENT_VERSION}"
-	SHORT_IMAGE_TAG="${BASE_TAG}-${IMAGE_TAG}"
-	SHORTEST_IMAGE_TAG="${BASE_TAG%%-*}-${IMAGE_TAG}"
+	DEV_IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}-${IMAGE_TAG}-dev"
+
+	FULL_IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}-${IMAGE_TAG}-${AZP_AGENT_IMAGE_VERSION}"
+	SHORT_IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}-${IMAGE_TAG}"
+	SHORTEST_IMAGE_TAG="${DISTRO}-${IMAGE_TAG}"
 	
-	if [ -z "$FIRST_ARG" ] || [ "$FIRST_ARG" -eq "$IMAGE_TAG" ]
+	if [ -z "$FIRST_ARG" ] || [ "$FIRST_ARG" == "$IMAGE_TAG" ]
 	then
 		TAGS_TO_UPLOAD=(
 			$FULL_IMAGE_TAG
@@ -37,8 +72,8 @@ do
 		if [ "$IMAGE_TAG" == "standard" ]
 		then
 			TAGS_TO_UPLOAD+=(
-				${BASE_TAG}
-				${BASE_TAG%%-*}
+				"${DISTRO}-${DISTRO_VERSION}"
+				$DISTRO
 				latest
 			)
 		fi
