@@ -32,11 +32,20 @@ ARG JDK_CURRENT_VERSION_MINOR=0.2
 ARG JDK_LTS_VERSION_MAJOR=8
 ARG JDK_LTS_VERSION=8u222
 
-COPY --from=jdk_current_official /usr/java/latest /usr/java/latest
+COPY --from=jdk_current_official /usr/java/openjdk-${JDK_CURRENT_VERSION_MAJOR} /usr/java/openjdk-${JDK_CURRENT_VERSION_MAJOR}
 COPY --from=jdk_lts_official /usr/local/openjdk-${JDK_LTS_VERSION_MAJOR} /usr/java/openjdk-${JDK_LTS_VERSION_MAJOR}
 
-ENV JAVA_HOME /usr/java/latest
+ENV JAVA_HOME /usr/java/openjdk-${JDK_CURRENT_VERSION_MAJOR}
+ENV JAVA_HOME_${JDK_CURRENT_VERSION_MAJOR} /usr/java/openjdk-${JDK_CURRENT_VERSION_MAJOR}
+ENV JAVA_HOME_${JDK_CURRENT_VERSION_MAJOR}_X64 /usr/java/openjdk-${JDK_CURRENT_VERSION_MAJOR}
+ENV JAVA_HOME_${JDK_LTS_VERSION_MAJOR} /usr/java/openjdk-${JDK_LTS_VERSION_MAJOR}
+ENV JAVA_HOME_${JDK_LTS_VERSION_MAJOR}_X64 /usr/java/openjdk-${JDK_LTS_VERSION_MAJOR}
 ENV PATH $PATH:$JAVA_HOME/bin
+
+RUN ln -s $JAVA_HOME /usr/java/current
+RUN ln -s $JAVA_HOME /usr/java/latest
+
+ENV JAVA_TOOL_OPTIONS -Dfile.encoding=UTF8
 
 ENV java $JAVA_HOME/bin/java
 
@@ -63,9 +72,11 @@ FROM sbt AS ant
 ARG ANT_VERSION=1.10.6
 RUN curl -fsL https://www-us.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz | tar zxvf - -C /usr/local/bin
 
-ENV PATH $PATH:/usr/local/bin/apache-ant-${ANT_VERSION}/bin
+ENV ANT_HOME /usr/local/bin/apache-ant-${ANT_VERSION}
 
-ENV ant /usr/local/bin/apache-ant-${ANT_VERSION}/bin/ant
+ENV PATH $PATH:$ANT_HOME/bin
+
+ENV ant $ANT_HOME/bin/ant
 
 FROM ant AS gradle
 
@@ -98,6 +109,7 @@ FROM clojure AS maven
 
 COPY --from=maven_official /usr/share/maven /usr/share/maven
 
+ENV M2_HOME /usr/share/maven
 ENV MAVEN_HOME /usr/share/maven
 
 ENV PATH $PATH:$MAVEN_HOME/bin

@@ -4,9 +4,11 @@ ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
 
 ARG POWERSHELL_VERSION=6.2.2
-ARG DOCKER_VERSION=18.09.8
+ARG DOCKER_VERSION=19.03.1
 ARG KUBECTL_VERSION=1.15.1
 ARG HELM_VERSION=2.14.2
+
+FROM bitnami/kubectl:${KUBECTL_VERSION} AS kubectl
 
 FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal-${AZP_AGENT_IMAGE_VERSION} AS build
 
@@ -31,7 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   grep \
   iproute2 \
   less \
-  locales \
   lsb-release \
   make \
   net-tools \
@@ -93,6 +94,8 @@ RUN python3 -m pip install \
 # Powershell utils
 FROM python AS powershell
 
+ARG POWERSHELL_VERSION=6.2.2
+
 RUN curl -LO https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz && \
   mkdir -p /usr/local/bin/powershell && \
   tar -zxvf powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz -C /usr/local/bin/powershell && \
@@ -108,6 +111,8 @@ ENV powershell /usr/local/bin/powershell/powershell
 # Docker utils
 FROM powershell AS docker
 
+ARG DOCKER_VERSION=19.03.1
+
 RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz && \
   tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local/bin && \
   rm docker-${DOCKER_VERSION}.tgz
@@ -117,22 +122,18 @@ ENV PATH $PATH:/usr/local/bin/docker
 ENV docker /usr/local/bin/docker/docker
 
 # Kubernetes utils
-FROM docker AS k8s_download
+FROM docker AS k8s
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
-  chmod +x ./kubectl && \
-  mv ./kubectl /usr/local/bin/kubectl
+ARG HELM_VERSION=2.14.2
+
+COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/kubectl
+ENV kubectl /usr/local/bin/kubectl
 
 RUN curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   tar -zxvf helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   chmod +x ./linux-amd64/helm && \
-  mv ./linux-amd64/helm /usr/local/bin/helm
-
-FROM docker AS k8s
-
-COPY --from=k8s_download /usr/local/bin/kubectl /usr/local/bin/kubectl
-ENV kubectl /usr/local/bin/kubectl
-COPY --from=k8s_download /usr/local/bin/helm /usr/local/bin/helm
+  mv ./linux-amd64/helm /usr/local/bin/helm && \
+  rm -rf ./linux-amd64
 ENV helm /usr/local/bin/helm
 
 # Database utils

@@ -35,12 +35,7 @@ echo 'Build args:' ${BUILD_ARGS[@]}
 
 FIRST_ARG=$1
 
-TAG_VERSIONS=(
-	minimal
-	base
-	dotnet
-	java
-)
+TAG_VERSIONS=(minimal base dotnet java node haskell go cpp ruby)
 
 BUILD_IMAGE='gmaresca/azure-pipeline-agent'
 
@@ -52,11 +47,11 @@ for IMAGE_TAG in ${TAG_VERSIONS[@]}
 do
 	FULL_IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}-${IMAGE_TAG}"
 	
-	if [ -z "$FIRST_ARG" ] || [ "$FIRST_ARG" == "$IMAGE_TAG" ]
+	if [ -z "$FIRST_ARG" ] || [ "$FIRST_ARG" == "$IMAGE_TAG" ] || [ "$FIRST_ARG" == "all" ] || [ "$FIRST_ARG" == "langs" ]
 	then
 		echo "Building ${BUILD_IMAGE}:${FULL_IMAGE_TAG}-dev"
 
-		docker build -t "${BUILD_IMAGE}:${FULL_IMAGE_TAG}-dev" -f "${IMAGE_TAG}/Dockerfile" ${BUILD_ARGS[@]} .
+		if [ -z "$DRY_RUN" ]; then docker build -t "${BUILD_IMAGE}:${FULL_IMAGE_TAG}-dev" -f "${IMAGE_TAG}/Dockerfile" ${BUILD_ARGS[@]} .; fi
 
 		if [ $? -ne 0 ]
 		then
@@ -69,27 +64,46 @@ do
 	fi
 done
 
-
-if [ "$FIRST_ARG" == "standard" ]
+if [ "$FIRST_ARG" == "permutations" ] || [ "$FIRST_ARG" == "all" ]
 then
+	for (( ITERATOR = 2; ITERATOR < ${#TAG_VERSIONS[@]}; ITERATOR++ ))
+	do
+		BASE_TAG_VERSION=${TAG_VERSIONS[$ITERATOR]}
+		for (( INNER_ITERATOR = $ITERATOR + 1; INNER_ITERATOR < ${#TAG_VERSIONS[@]}; INNER_ITERATOR++ ))
+		do
+			CURRENT_IMAGE_TAG_VERSION=${TAG_VERSIONS[$INNER_ITERATOR]}
+			FULL_IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}-${BASE_TAG_VERSION}-${CURRENT_IMAGE_TAG_VERSION}"
 
-	echo "Building standard - inheritance: dotnet, java, standard"
+			echo "Building ${BUILD_IMAGE}:${FULL_IMAGE_TAG}-dev"
 
-	docker build -t "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-dotnet-dev" -f "dotnet/Dockerfile" --build-arg AZP_AGENT_BASE_IMAGE=base ${BUILD_ARGS[@]} .
+			if [ -z "$DRY_RUN" ]; then docker build -t "${BUILD_IMAGE}:${FULL_IMAGE_TAG}-dev" -f "${CURRENT_IMAGE_TAG_VERSION}/Dockerfile" --build-arg AZP_AGENT_BASE_IMAGE=$BASE_TAG_VERSION ${BUILD_ARGS[@]} .; fi
 
-	if [ $? -ne 0 ]
-	then
-		exit $?
-	fi
+			if [ $? -ne 0 ]
+			then
+				exit $?
+			fi
 
-	docker build -t "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-java-dev" -f "java/Dockerfile" --build-arg AZP_AGENT_BASE_IMAGE=dotnet ${BUILD_ARGS[@]} .
+			echo "Finished building ${BUILD_IMAGE}:$FULL_IMAGE_TAG"
 
-	if [ $? -ne 0 ]
-	then
-		exit $?
-	fi
+			BASE_TAG_VERSION+="-$CURRENT_IMAGE_TAG_VERSION"
+		done
+	done
+fi
 
-	docker build -t "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-standard-dev" -f "standard/Dockerfile" --build-arg AZP_AGENT_BASE_IMAGE=java ${BUILD_ARGS[@]} .
+if [ "$FIRST_ARG" == "standard" ] || [ "$FIRST_ARG" == "all" ]
+then
+	STANDARD_TAGS=()
+	for (( ITERATOR = 2; ITERATOR <= ${#TAG_VERSIONS[@]} - 1; ITERATOR++ ))
+	do
+		STANDARD_TAGS+=(${TAG_VERSIONS[$ITERATOR]})
+	done
+
+	STANDARD_TAGS_STR=${STANDARD_TAGS[@]}
+	STANDARD_TAGS_STR=${STANDARD_TAGS_STR// /-}
+
+	echo "Using tag $STANDARD_TAGS_STR as base for standard"
+
+	if [ -z "$DRY_RUN" ]; then docker tag "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-${STANDARD_TAGS_STR}-dev" "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-${FIRST_ARG}-dev"; fi
 
 	if [ $? -ne 0 ]
 	then

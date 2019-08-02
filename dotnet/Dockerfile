@@ -26,14 +26,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Dotnet
 FROM aptget AS dotnet
 
-COPY --from=dotnet_current_official /usr/share/dotnet/sdk /usr/share/dotnet
+ARG DOTNET_LTS_VERSION=2.1.801
+
+COPY --from=dotnet_current_official /usr/share/dotnet /usr/share/dotnet
 COPY --from=dotnet_lts_official /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION} /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION}
-RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 ENV DOTNET_ROOT /usr/share/dotnet
+
+RUN ln -s $DOTNET_ROOT/dotnet /usr/bin/dotnet
+
 ENV PATH $PATH:$DOTNET_ROOT
 
-ENV dotnet /usr/share/dotnet/dotnet/
+ENV dotnet $DOTNET_ROOT/dotnet
 
 FROM dotnet AS dotnet_tools
 

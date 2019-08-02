@@ -28,15 +28,20 @@ done < $BUILD_PROPERTIES_FILE
 
 FIRST_ARG=$1
 
-TAG_VERSIONS=(
-	minimal
-	base
-	dotnet
-	java
-)
+TAG_VERSIONS_BASE=(minimal base dotnet java node haskell go cpp ruby)
+TAG_VERSIONS=(${TAG_VERSIONS_BASE[@]})
 
-# Update this whenever uploading new versions
-AZP_AGENT_VERSION='v1'
+for (( ITERATOR = 2; ITERATOR < ${#TAG_VERSIONS_BASE[@]}; ITERATOR++ ))
+do
+	BASE_TAG_VERSION=${TAG_VERSIONS_BASE[$ITERATOR]}
+	for (( INNER_ITERATOR = $ITERATOR + 1; INNER_ITERATOR < ${#TAG_VERSIONS_BASE[@]}; INNER_ITERATOR++ ))
+	do
+		BASE_TAG_VERSION+="-${TAG_VERSIONS_BASE[$INNER_ITERATOR]}"
+		TAG_VERSIONS+=($BASE_TAG_VERSION)
+	done
+done
+
+TAG_VERSIONS+=(standard)
 
 if [ -z "$AZP_AGENT_IMAGE_VERSION" ]; then
 	echo "AZP_AGENT_IMAGE_VERSION was not set" 1>&2
@@ -52,6 +57,8 @@ if [ -z "$DISTRO_VERSION" ]; then
 fi
 
 BUILD_IMAGE='gmaresca/azure-pipeline-agent'
+
+echo "Uploading $BUILD_IMAGE with tag versions [${TAG_VERSIONS[@]}]"
 
 for IMAGE_TAG in ${TAG_VERSIONS[@]}
 do
@@ -82,7 +89,7 @@ do
 
 		for TAG_TO_UPLOAD in ${TAGS_TO_UPLOAD[@]}
 		do
-			docker tag "${BUILD_IMAGE}:${DEV_IMAGE_TAG}" "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"
+			if [ -z "$DRY_RUN" ]; then docker tag "${BUILD_IMAGE}:${DEV_IMAGE_TAG}" "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
 
 			if [ $? -ne 0 ]
 			then
@@ -92,7 +99,7 @@ do
 
 		for TAG_TO_UPLOAD in ${TAGS_TO_UPLOAD[@]}
 		do
-			docker push "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"
+			if [ -z "$DRY_RUN" ]; then docker push "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
 
 			if [ $? -ne 0 ]
 			then
@@ -104,7 +111,7 @@ do
 		do
 			if [ "$TAG_TO_UPLOAD" != "$SHORT_IMAGE_TAG" ]
 			then
-				docker rmi "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"
+				if [ -z "$DRY_RUN" ]; then docker rmi "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
 
 				if [ $? -ne 0 ]
 				then
