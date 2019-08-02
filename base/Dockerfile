@@ -49,6 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   tree \
   unrar \
   unzip \
+  uuid \
   wget \
   zip
 
@@ -189,6 +190,18 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 ENV gce /usr/bin/gcloud
 ENV gcloud /usr/bin/gcloud
 
+FROM gcecli AS node
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cjs \
+    gjs \
+    nodejs \
+    npm
+
+ENV node /usr/bin/nodejs
+ENV nodejs /usr/bin/nodejs
+ENV npm /usr/bin/npm
+
 # Cleanup
-FROM gcecli AS final
+FROM node AS final
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*

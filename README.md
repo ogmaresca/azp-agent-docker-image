@@ -18,17 +18,17 @@ The `start.sh` script comes from [https://docs.microsoft.com/en-us/azure/devops/
 
 The Docker images are hosted in the [Docker Hub repository](https://hub.docker.com/r/gmaresca/azure-pipeline-agent) `docker.io/gmaresca/azure-pipeline-agent`.
 
-| Tag                   | Size   | Notes                                                                | Dockerfile                       | Versions |
-| --------------------- | ------ | -------------------------------------------------------------------- | -------------------------------- | -------- |
-| ubuntu-18.04-minimal  | 222MB  | The bare minimum required to run the agents.                         | [Dockerfile](minimal/Dockerfile) | v1       |
-| ubuntu-18.04-base     | 2.35GB | The image with all non-language-specific tools and Python installed. | [Dockerfile](base/Dockerfile)    | v1       |
-| ubuntu-18.04-dotnet   | 4.22GB | The image with dotnet tools installed.                               | [Dockerfile](dotnet/Dockerfile)  | v1       |
-| ubuntu-18.04-java     | 3.18GB | The image with Java tools installed.                                 | [Dockerfile](java/Dockerfile)    | v1       |
-| ubuntu-18.04-node     | 2.46GB | The image with Node tools installed.                                 | [Dockerfile](node/Dockerfile)    | v1       |
-| ubuntu-18.04-haskell  | 3.27GB | The image with Haskell tools installed.                              | [Dockerfile](haskell/Dockerfile) | v1       |
-| ubuntu-18.04-cpp      | 2.68GB | The image with C++ tools installed.                                  | [Dockerfile](cpp/Dockerfile)     | v1       |
-| ubuntu-18.04-ruby     | 3.5GB  | The image with Ruby tools installed.                                 | [Dockerfile](ruby/Dockerfile)    | v1       |
-| ubuntu-18.04-standard | 6.75GB | The image with all of the above tools installed.                     |                                  | v1       |
+| Tag                   | Size   | Notes                                                         | Dockerfile                       | Versions |
+| --------------------- | ------ | ------------------------------------------------------------- | -------------------------------- | -------- |
+| ubuntu-18.04-minimal  | 222MB  | The bare minimum required to run the agents.                  | [Dockerfile](minimal/Dockerfile) | v1       |
+| ubuntu-18.04-base     | 2.46FB | The image with Python, Node, and all generic tools installed. | [Dockerfile](base/Dockerfile)    | v1       |
+| ubuntu-18.04-dotnet   | 4.32GB | The image with dotnet tools installed.                        | [Dockerfile](dotnet/Dockerfile)  | v1       |
+| ubuntu-18.04-java     | 3.29GB | The image with Java tools installed.                          | [Dockerfile](java/Dockerfile)    | v1       |
+| ubuntu-18.04-go       | 2.85GB | The image with Go tools installed.                            | [Dockerfile](cpp/Dockerfile)     | v1       |
+| ubuntu-18.04-cpp      | 2.68GB | The image with C++ tools installed.                           | [Dockerfile](cpp/Dockerfile)     | v1       |
+| ubuntu-18.04-ruby     | 2.6GB  | The image with Ruby tools installed.                          | [Dockerfile](ruby/Dockerfile)    | v1       |
+| ubuntu-18.04-haskell  | 3.37GB | The image with Haskell tools installed.                       | [Dockerfile](haskell/Dockerfile) | v1       |
+| ubuntu-18.04-standard | 6.75GB | The image with all of the above tools installed.              |                                  | v1       |
 
 
 ## Installation
@@ -88,6 +88,7 @@ The following package are also installed in the `base` image (and every other im
 * tree
 * unrar
 * unzip
+* uuid
 * wget
 * zip
 

@@ -35,7 +35,7 @@ echo 'Build args:' ${BUILD_ARGS[@]}
 
 FIRST_ARG=$1
 
-TAG_VERSIONS=(minimal base dotnet java node haskell go cpp ruby)
+TAG_VERSIONS=(minimal base dotnet java go cpp ruby haskell)
 
 BUILD_IMAGE='gmaresca/azure-pipeline-agent'
 
