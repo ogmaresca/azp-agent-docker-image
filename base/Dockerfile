@@ -8,7 +8,11 @@ ARG DOCKER_VERSION=19.03.1
 ARG KUBECTL_VERSION=1.15.1
 ARG HELM_VERSION=2.14.2
 
+ARG DOTNET_CURRENT_VERSION=2.2.401
+
 FROM bitnami/kubectl:${KUBECTL_VERSION} AS kubectl
+
+FROM mcr.microsoft.com/dotnet/core/sdk:${DOTNET_CURRENT_VERSION}-${DISTRO_FRIENDLY} AS dotnet_current_official
 
 FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-minimal-${AZP_AGENT_IMAGE_VERSION} AS build
 
@@ -71,29 +75,8 @@ RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends \
 
 ENV chrome /usr/bin/chrome
 
-# Python utils
-FROM chrome AS python
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  #python2 \
-  python \
-  python3 \
-  python3-pip
-
-ENV python /usr/bin/python3
-ENV python2 /usr/bin/python2
-ENV python2 /usr/bin/python3
-ENV pip /usr/bin/pip3
-ENV pip3 /usr/bin/pip3
-
-RUN python3 -m pip install \
-  setuptools
-
-RUN python3 -m pip install \
-  yq
-
 # Powershell utils
-FROM python AS powershell
+FROM chrome AS powershell
 
 ARG POWERSHELL_VERSION=6.2.2
 
@@ -155,17 +138,8 @@ ENV postgresql /usr/bin/psql
 ENV sqlite /use/bin/sqlite3
 ENV sqlite3 /use/bin/sqlite3
 
-# Cloud provider utils
-## AWS CLI
-FROM db AS awscli
-RUN python3 -m pip install \
-  awscli
-
-ENV aws /usr/local/bin/aws
-ENV awscli /usr/local/bin/aws
-
 ## Azure CLI
-FROM awscli AS azcli
+FROM db AS azcli
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
     gpg --dearmor | \
     sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null && \
@@ -178,8 +152,40 @@ ENV az /usr/bin/az
 ENV azure /usr/bin/az
 ENV azurecli /usr/bin/az
 
+# AZCopy
+FROM azcli AS dotnet
+
+# Install .NET dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  libc6 \
+  libgcc1 \
+  libgssapi-krb5-2 \
+  liblttng-ust0 \
+  libssl1.1 \
+  libstdc++6 \
+  zlib1g
+
+COPY --from=dotnet_current_official /usr/share/dotnet /usr/share/dotnet
+
+ENV DOTNET_ROOT /usr/share/dotnet
+
+RUN ln -s $DOTNET_ROOT/dotnet /usr/bin/dotnet
+
+ENV PATH $PATH:$DOTNET_ROOT
+
+ENV dotnet $DOTNET_ROOT/dotnet
+
+FROM dotnet AS azcopy
+
+RUN curl -fsL https://aka.ms/downloadazcopylinux64 | tar zxvf - -C /usr/local/bin -x azcopy
+
+ENV PATH $PATH:/usr/local/bin/azcopy
+
+ENV azcopy /usr/local/bin/azcopy/azcopy
+
 ## GCE CLI
-FROM azcli AS gcecli
+FROM azcopy AS gcecli
+
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
     sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
@@ -196,12 +202,65 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cjs \
     gjs \
     nodejs \
-    npm
+    npm \
+    yarn
 
 ENV node /usr/bin/nodejs
 ENV nodejs /usr/bin/nodejs
 ENV npm /usr/bin/npm
+ENV yarn /usr/bin/yarn
+
+FROM node AS hostedtoolcache
+
+ARG RUBY_VERSION=2.6.2
+ARG PYTHON3_VERSION=3.7.3
+
+RUN azcopy --recursive \
+  --source https://vstsagenttools.blob.core.windows.net/tools/hostedtoolcache/ubuntu-1804 \
+  --destination $AGENT_TOOLSDIRECTORY
+
+RUN ORIGINAL_DIR=$(pwd) && \
+  SETUP_SCRIPTS=$(find $AGENT_TOOLSDIRECTORY -name setup.sh) && \
+  for SETUP_SCRIPT in $SETUP_SCRIPTS; do chmod +x $SETUP_SCRIPT && cd $(dirname $SETUP_SCRIPT) && ./$(basename $SETUP_SCRIPT); done;
+
+ENV PATH $PATH:/opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin
+ENV PATH $PATH:/opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin
+
+ENV bundle /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/bundle
+ENV bundler /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/bundler
+ENV erb /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/erb
+ENV gem /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/gem
+ENV irb /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/irb
+ENV rake /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/rake
+ENV rdoc /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/rdoc
+ENV ri /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/ri
+ENV ruby /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/ruby
+
+ENV pip /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/pip
+ENV pip3 /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/pip3
+ENV python /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/python
+ENV python3 /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/python3
+
+ENV pip2 /usr/local/bin/pip2
+ENV python2 /usr/local/bin/python2
+
+# Validate versions
+RUN if [ -z "$(type ruby 2>/dev/null)" ] || [ -z "$(type python3 2>/dev/null)" ]; then echo "Ruby versions: " && ls /opt/hostedtoolcache/Ruby && echo "Python versions: " && ls /opt/hostedtoolcache/Python && exit 1; fi && \
+  ln -s /opt/hostedtoolcache/Python/$(ls /opt/hostedtoolcache/Python | grep -e ^2. | sort | tail -1)/x64/bin/pip2 $pip2 && \
+  ln -s /opt/hostedtoolcache/Python/$(ls /opt/hostedtoolcache/Python | grep -e ^2. | sort | tail -1)/x64/bin/python2 $python2
+
+# Pip3 tools
+FROM hostedtoolcache AS python_tools
+
+RUN pip3 install setuptools && pip3 install yq && pip3 install awscli
+
+ENV yq /usr/local/bin/yq
+ENV xq /usr/local/bin/xq
+
+ENV aws /usr/local/bin/aws
+ENV awscli /usr/local/bin/aws
 
 # Cleanup
-FROM node AS final
+FROM python_tools AS final
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*

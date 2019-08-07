@@ -18,17 +18,16 @@ The `start.sh` script comes from [https://docs.microsoft.com/en-us/azure/devops/
 
 The Docker images are hosted in the [Docker Hub repository](https://hub.docker.com/r/gmaresca/azure-pipeline-agent) `docker.io/gmaresca/azure-pipeline-agent`.
 
-| Tag                   | Size   | Notes                                                         | Dockerfile                       | Versions |
-| --------------------- | ------ | ------------------------------------------------------------- | -------------------------------- | -------- |
-| ubuntu-18.04-minimal  | 222MB  | The bare minimum required to run the agents.                  | [Dockerfile](minimal/Dockerfile) | v1       |
-| ubuntu-18.04-base     | 2.46FB | The image with Python, Node, and all generic tools installed. | [Dockerfile](base/Dockerfile)    | v1       |
-| ubuntu-18.04-dotnet   | 4.32GB | The image with dotnet tools installed.                        | [Dockerfile](dotnet/Dockerfile)  | v1       |
-| ubuntu-18.04-java     | 3.29GB | The image with Java tools installed.                          | [Dockerfile](java/Dockerfile)    | v1       |
-| ubuntu-18.04-go       | 2.85GB | The image with Go tools installed.                            | [Dockerfile](cpp/Dockerfile)     | v1       |
-| ubuntu-18.04-cpp      | 2.68GB | The image with C++ tools installed.                           | [Dockerfile](cpp/Dockerfile)     | v1       |
-| ubuntu-18.04-ruby     | 2.6GB  | The image with Ruby tools installed.                          | [Dockerfile](ruby/Dockerfile)    | v1       |
-| ubuntu-18.04-haskell  | 3.37GB | The image with Haskell tools installed.                       | [Dockerfile](haskell/Dockerfile) | v1       |
-| ubuntu-18.04-standard | 6.75GB | The image with all of the above tools installed.              |                                  | v1       |
+| Tag                   | Size   | Notes                                                                                     | Dockerfile                       | Versions |
+| --------------------- | ------ | ----------------------------------------------------------------------------------------- | -------------------------------- | -------- |
+| ubuntu-18.04-minimal  | 222MB  | The bare minimum required to run the agents.                                              | [Dockerfile](minimal/Dockerfile) | v1       |
+| ubuntu-18.04-base     | 5.73GB | The image with all generic tools installed as well as Python, Ruby, and the .NET runtime. | [Dockerfile](base/Dockerfile)    | v1       |
+| ubuntu-18.04-dotnet   | 6.36GB | The image with dotnet tools installed.                                                    | [Dockerfile](dotnet/Dockerfile)  | v1       |
+| ubuntu-18.04-java     | 6.56GB | The image with Java tools installed.                                                      | [Dockerfile](java/Dockerfile)    | v1       |
+| ubuntu-18.04-go       | 6.13GB | The image with Go tools installed.                                                        | [Dockerfile](cpp/Dockerfile)     | v1       |
+| ubuntu-18.04-cpp      | 5.95GB | The image with C++ tools installed.                                                       | [Dockerfile](cpp/Dockerfile)     | v1       |
+| ubuntu-18.04-haskell  | 6.64GB | The image with Haskell tools installed.                                                   | [Dockerfile](haskell/Dockerfile) | v1       |
+| ubuntu-18.04-standard | 8.73GB | The image with all of the above tools installed.                                          |                                  | v1       |
 
 
 ## Installation
@@ -95,6 +94,7 @@ The following package are also installed in the `base` image (and every other im
 Addition software that are also installed:
 
 * awscli
+* azcopy
 * az
 * docker
 * gcloud
@@ -116,6 +116,7 @@ All images, besides `minimal`, have the following environment variables:
 
 * aws
 * awcli
+* azcopy
 * az
 * azure
 * azurecli
@@ -161,6 +162,7 @@ The `base` image has Python installed to install `yq` and `awscli`.
 * python2
 * python3
 * pip
+* pip2
 * pip3
 
 ### C/C++
@@ -217,6 +219,8 @@ The `base` image has Python installed to install `yq` and `awscli`.
 
 ### C#
 
+The `base` image has the C# runtime. The `dotnet` image has the entire SDK and all other tools.
+
 * .NET Core SDK
 * coverlet.console (`dotnet` tool)
 * dotnet-sqldb (`dotnet` tool)
@@ -254,24 +258,39 @@ Installed version is 1.12.
 
 ### Javascript/Node
 
-Installed Node version is 8.10.0.
+The `base` image has Node installed.
 
 * cjs
 * gjs
 * nodejs
 * npm
+* yarn
 
 #### Environment Variables
 
 * node
 * nodejs
 * npm
+* yarn
+
+#### Versions
+
+##### v1
+
+* Node 8.10.0
 
 ### Ruby
 
-Installed version is 2.5.1.
+The `base` image has Ruby installed.
 
+* bundle
+* bundler
+* erb
 * gem
+* irb
+* rake
+* rdoc
+* ri
 * ruby
 
 #### Environment Variables

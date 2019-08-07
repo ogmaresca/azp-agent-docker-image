@@ -28,7 +28,7 @@ done < $BUILD_PROPERTIES_FILE
 
 FIRST_ARG=$1
 
-TAG_VERSIONS_BASE=(minimal base dotnet java go cpp ruby haskell)
+TAG_VERSIONS_BASE=(minimal base dotnet java go cpp haskell)
 TAG_VERSIONS=(${TAG_VERSIONS_BASE[@]})
 
 for (( ITERATOR = 2; ITERATOR < ${#TAG_VERSIONS_BASE[@]}; ITERATOR++ ))

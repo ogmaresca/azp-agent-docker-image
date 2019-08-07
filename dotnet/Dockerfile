@@ -23,22 +23,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   libstdc++6 \
   zlib1g
 
-# Install Dotnet
+# Install Dotnet SDK
 FROM aptget AS dotnet
 
+ARG DOTNET_CURRENT_VERSION=2.2.401
 ARG DOTNET_LTS_VERSION=2.1.801
 
-COPY --from=dotnet_current_official /usr/share/dotnet /usr/share/dotnet
+COPY --from=dotnet_current_official /usr/share/dotnet/sdk/${DOTNET_CURRENT_VERSION} /usr/share/dotnet/sdk/${DOTNET_CURRENT_VERSION}
 COPY --from=dotnet_lts_official /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION} /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION}
 
-ENV DOTNET_ROOT /usr/share/dotnet
-
-RUN ln -s $DOTNET_ROOT/dotnet /usr/bin/dotnet
-
-ENV PATH $PATH:$DOTNET_ROOT
-
-ENV dotnet $DOTNET_ROOT/dotnet
-
+# Install common tools
 FROM dotnet AS dotnet_tools
 
 RUN ln -s $HOME/.dotnet/tools /usr/local/bin/dotnet-tools
