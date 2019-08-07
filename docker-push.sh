@@ -79,6 +79,7 @@ do
 		if [ "$IMAGE_TAG" == "standard" ]
 		then
 			TAGS_TO_UPLOAD+=(
+				"${DISTRO}-${DISTRO_VERSION}-${AZP_AGENT_IMAGE_VERSION}"
 				"${DISTRO}-${DISTRO_VERSION}"
 				$DISTRO
 				latest
