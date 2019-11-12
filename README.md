@@ -20,14 +20,14 @@ The Docker images are hosted in the [Docker Hub repository](https://hub.docker.c
 
 | Tag                   | Size   | Notes                                                                                     | Dockerfile                       | Versions |
 | --------------------- | ------ | ----------------------------------------------------------------------------------------- | -------------------------------- | -------- |
-| ubuntu-18.04-minimal  | 222MB  | The bare minimum required to run the agents.                                              | [Dockerfile](minimal/Dockerfile) | v1       |
-| ubuntu-18.04-base     | 5.73GB | The image with all generic tools installed as well as Python, Ruby, and the .NET runtime. | [Dockerfile](base/Dockerfile)    | v1       |
-| ubuntu-18.04-dotnet   | 6.36GB | The image with dotnet tools installed.                                                    | [Dockerfile](dotnet/Dockerfile)  | v1       |
-| ubuntu-18.04-java     | 6.56GB | The image with Java tools installed.                                                      | [Dockerfile](java/Dockerfile)    | v1       |
-| ubuntu-18.04-go       | 6.13GB | The image with Go tools installed.                                                        | [Dockerfile](cpp/Dockerfile)     | v1       |
-| ubuntu-18.04-cpp      | 5.95GB | The image with C++ tools installed.                                                       | [Dockerfile](cpp/Dockerfile)     | v1       |
-| ubuntu-18.04-haskell  | 6.64GB | The image with Haskell tools installed.                                                   | [Dockerfile](haskell/Dockerfile) | v1       |
-| ubuntu-18.04-standard | 8.73GB | The image with all of the above tools installed.                                          |                                  | v1       |
+| ubuntu-18.04-minimal  | 223MB  | The bare minimum required to run the agents.                                              | [Dockerfile](minimal/Dockerfile) | v1, v2   |
+| ubuntu-18.04-base     | 4.88GB | The image with all generic tools installed as well as Python, Ruby, and the .NET runtime. | [Dockerfile](base/Dockerfile)    | v1, v2   |
+| ubuntu-18.04-dotnet   | 5.35GB | The image with dotnet tools installed.                                                    | [Dockerfile](dotnet/Dockerfile)  | v1, v2   |
+| ubuntu-18.04-java     | 5.71GB | The image with Java tools installed.                                                      | [Dockerfile](java/Dockerfile)    | v1, v2   |
+| ubuntu-18.04-go       | 5.27GB | The image with Go tools installed.                                                        | [Dockerfile](cpp/Dockerfile)     | v1, v2   |
+| ubuntu-18.04-cpp      | 5.1GB  | The image with C++ tools installed.                                                       | [Dockerfile](cpp/Dockerfile)     | v1, v2   |
+| ubuntu-18.04-haskell  | 5.79GB | The image with Haskell tools installed.                                                   | [Dockerfile](haskell/Dockerfile) | v1, v2   |
+| ubuntu-18.04-standard | 7.7GB  | The image with all of the above tools installed.                                          |                                  | v1, v2   |
 
 
 ## Installation
@@ -56,6 +56,7 @@ The following package are also installed in the `base` image (and every other im
 * build-essential
 * bzr
 * chrome
+* cron (v2+)
 * dc
 * dnsutils
 * ed
@@ -104,6 +105,7 @@ Addition software that are also installed:
 * mysql-client
 * postgresql-client
 * powershell
+* sqlcmd (v2+)
 * sqlite3
 * xq (XML version of `jq`)
 * yq (YAML version of `jq`)
@@ -121,6 +123,7 @@ All images, besides `minimal`, have the following environment variables:
 * azure
 * azurecli
 * chrome
+* cron (v2+)
 * docker
 * firefox
 * gce
@@ -132,6 +135,7 @@ All images, besides `minimal`, have the following environment variables:
 * psql
 * powershell
 * pwsh
+* sqlcmd (v2+)
 * sqlite
 * sqlite3
 
@@ -142,9 +146,18 @@ All images, besides `minimal`, have the following environment variables:
 The `v1` images contain the following versions of packages. If the package is not listed here, it will be the version included in Ubuntu 18.04, or the latest if it comes from a third-party repository.
 
 * Docker: 19.03.1
-* Helm: 1.14.3
+* Helm: 2.14.3
 * Kubectl: 1.15.1
 * Powershell: 6.2.2
+
+### v2
+
+The `v2` images contain the following versions of packages. If the package is not listed here, it will be the version included in Ubuntu 18.04, or the latest if it comes from a third-party repository.
+
+* Docker: 19.03.4
+* Helm: 2.16.0
+* Kubectl: 1.16.2
+* Powershell: 6.2.3
 
 ## Language Support
 
@@ -164,6 +177,9 @@ The `base` image has Python installed to install `yq` and `awscli`.
 * pip
 * pip2
 * pip3
+* 2to3 (v2+)
+* python2-config (v2+)
+* python3-config (v2+)
 
 ### C/C++
 
@@ -200,8 +216,19 @@ The `base` image has Python installed to install `yq` and `awscli`.
 * Gradle 5.5.1
 * Lein 2.9.1
 * Maven 3.6.1
-* OpenJDK 8 JDK
-* OpenJDK 12 JDK
+* OpenJDK 8u222 JDK
+* OpenJDK 12.0.2 JDK
+* Scala 2.13.0
+* sbt 1.2.8
+
+##### v2
+
+* Ant 1.10.6
+* Gradle 5.5.1
+* Lein 2.9.1
+* Maven 3.6.1
+* OpenJDK 8u232 JDK
+* OpenJDK 12.0.2 JDK
 * Scala 2.13.0
 * sbt 1.2.8
 
@@ -234,6 +261,11 @@ The `base` image has the C# runtime. The `dotnet` image has the entire SDK and a
 * .NET Core SDK 2.1.801
 * .NET Core SDK 2.2.401
 
+##### v2
+
+* .NET Core SDK 2.1.802
+* .NET Core SDK 3.0.100
+
 #### Environment Variables
 
 * coverlet
@@ -246,10 +278,18 @@ The `base` image has the C# runtime. The `dotnet` image has the entire SDK and a
 
 ### Go
 
-Installed version is 1.12.
+#### Versions
 
 * golang
 * go-dep
+
+##### v1
+
+* golang 1.12.7
+
+##### v2
+
+* golang 1.13.4
 
 #### Environment Variables
 

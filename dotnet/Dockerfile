@@ -5,29 +5,16 @@ ARG DISTRO=ubuntu
 ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
 
-ARG DOTNET_CURRENT_VERSION=2.2.401
-ARG DOTNET_LTS_VERSION=2.1.801
+ARG DOTNET_CURRENT_VERSION=3.0.100
+ARG DOTNET_LTS_VERSION=2.1.802
 
 FROM mcr.microsoft.com/dotnet/core/sdk:${DOTNET_CURRENT_VERSION}-${DISTRO_FRIENDLY} AS dotnet_current_official
 FROM mcr.microsoft.com/dotnet/core/sdk:${DOTNET_LTS_VERSION}-${DISTRO_FRIENDLY} AS dotnet_lts_official
 
-FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-${AZP_AGENT_BASE_IMAGE}-${AZP_AGENT_IMAGE_VERSION} AS aptget
+FROM gmaresca/azure-pipeline-agent:${DISTRO}-${DISTRO_VERSION}-${AZP_AGENT_BASE_IMAGE}-${AZP_AGENT_IMAGE_VERSION} AS dotnet
 
-# Install .NET dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  libc6 \
-  libgcc1 \
-  libgssapi-krb5-2 \
-  liblttng-ust0 \
-  libssl1.1 \
-  libstdc++6 \
-  zlib1g
-
-# Install Dotnet SDK
-FROM aptget AS dotnet
-
-ARG DOTNET_CURRENT_VERSION=2.2.401
-ARG DOTNET_LTS_VERSION=2.1.801
+ARG DOTNET_CURRENT_VERSION=3.0.100
+ARG DOTNET_LTS_VERSION=2.1.802
 
 COPY --from=dotnet_current_official /usr/share/dotnet/sdk/${DOTNET_CURRENT_VERSION} /usr/share/dotnet/sdk/${DOTNET_CURRENT_VERSION}
 COPY --from=dotnet_lts_official /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION} /usr/share/dotnet/sdk/${DOTNET_LTS_VERSION}
@@ -50,7 +37,7 @@ RUN dotnet tool install -g nbgv
 
 ENV coverlet /usr/local/bin/dotnet-tools/coverlet
 ENV dotnet-gitversion /usr/local/bin/dotnet-tools/dotnet-gitversion
-ENV covedotnet-sqldbrlet /usr/local/bin/dotnet-tools/dotnet-sqldb
+ENV dotnet-sqldb /usr/local/bin/dotnet-tools/dotnet-sqldb
 ENV dotnet-stryker /usr/local/bin/dotnet-tools/dotnet-stryker
 ENV nbgv /usr/local/bin/dotnet-tools/nbgv
 

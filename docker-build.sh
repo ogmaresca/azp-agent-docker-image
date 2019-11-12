@@ -66,8 +66,9 @@ done
 
 if [ "$FIRST_ARG" == "permutations" ] || [ "$FIRST_ARG" == "all" ]
 then
-	for (( ITERATOR = 2; ITERATOR < ${#TAG_VERSIONS[@]}; ITERATOR++ ))
-	do
+	#for (( ITERATOR = 2; ITERATOR < ${#TAG_VERSIONS[@]}; ITERATOR++ ))
+	#do
+	ITERATOR=2
 		BASE_TAG_VERSION=${TAG_VERSIONS[$ITERATOR]}
 		for (( INNER_ITERATOR = $ITERATOR + 1; INNER_ITERATOR < ${#TAG_VERSIONS[@]}; INNER_ITERATOR++ ))
 		do
@@ -87,7 +88,7 @@ then
 
 			BASE_TAG_VERSION+="-$CURRENT_IMAGE_TAG_VERSION"
 		done
-	done
+	#done
 fi
 
 if [ "$FIRST_ARG" == "standard" ] || [ "$FIRST_ARG" == "all" ]
@@ -103,7 +104,7 @@ then
 
 	echo "Using tag $STANDARD_TAGS_STR as base for standard"
 
-	if [ -z "$DRY_RUN" ]; then docker tag "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-${STANDARD_TAGS_STR}-dev" "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-${FIRST_ARG}-dev"; fi
+	if [ -z "$DRY_RUN" ]; then docker tag "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-${STANDARD_TAGS_STR}-dev" "${BUILD_IMAGE}:${DISTRO}-${DISTRO_VERSION}-standard-dev"; fi
 
 	if [ $? -ne 0 ]
 	then

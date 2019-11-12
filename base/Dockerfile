@@ -3,12 +3,9 @@ ARG DISTRO=ubuntu
 ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
 
-ARG POWERSHELL_VERSION=6.2.2
-ARG DOCKER_VERSION=19.03.1
-ARG KUBECTL_VERSION=1.15.1
-ARG HELM_VERSION=2.14.2
+ARG DOTNET_CURRENT_VERSION=3.0.100
 
-ARG DOTNET_CURRENT_VERSION=2.2.401
+ARG KUBECTL_VERSION=1.16.2
 
 FROM bitnami/kubectl:${KUBECTL_VERSION} AS kubectl
 
@@ -23,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   bc \
   build-essential \
   bzr \
+  cron \
   dc \
   dnsutils \
   ed \
@@ -78,7 +76,7 @@ ENV chrome /usr/bin/chrome
 # Powershell utils
 FROM chrome AS powershell
 
-ARG POWERSHELL_VERSION=6.2.2
+ARG POWERSHELL_VERSION=6.2.3
 
 RUN curl -LO https://github.com/PowerShell/PowerShell/releases/download/v${POWERSHELL_VERSION}/powershell-${POWERSHELL_VERSION}-linux-x64.tar.gz && \
   mkdir -p /usr/local/bin/powershell && \
@@ -95,7 +93,7 @@ ENV powershell /usr/local/bin/powershell/powershell
 # Docker utils
 FROM powershell AS docker
 
-ARG DOCKER_VERSION=19.03.1
+ARG DOCKER_VERSION=19.03.4
 
 RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz && \
   tar zxvf docker-${DOCKER_VERSION}.tgz -C /usr/local/bin && \
@@ -108,7 +106,7 @@ ENV docker /usr/local/bin/docker/docker
 # Kubernetes utils
 FROM docker AS k8s
 
-ARG HELM_VERSION=2.14.2
+ARG HELM_VERSION=2.16.0
 
 COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/kubectl
 ENV kubectl /usr/local/bin/kubectl
@@ -118,25 +116,35 @@ RUN curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz && \
   chmod +x ./linux-amd64/helm && \
   mv ./linux-amd64/helm /usr/local/bin/helm && \
   rm -rf ./linux-amd64
+
 ENV helm /usr/local/bin/helm
 
 # Database utils
 FROM k8s AS db
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  mongodb-clients \
-  mysql-client \
-  #postgresql-client-11 \
-  postgresql-client-10 \
-  sqlite3
+RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+    gpg --dearmor | \
+    sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main" | \
+    sudo tee /etc/apt/sources.list.d/microsoft.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    mongodb-clients \
+    mysql-client \
+    #postgresql-client-11 \
+    postgresql-client-10 \
+    mssql-tools \
+    sqlite3 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
 
 ENV mongo /usr/bin/mongo
 ENV mongodb /usr/bin/mongo
 ENV mysql /usr/bin/mysql
 ENV psql /usr/bin/psql
 ENV postgresql /usr/bin/psql
+ENV sqlcmd /opt/mssql-tools/bin/sqlcmd
 ENV sqlite /use/bin/sqlite3
 ENV sqlite3 /use/bin/sqlite3
+ENV PATH $PATH:/opt/mssql-tools/bin
 
 ## Azure CLI
 FROM db AS azcli
@@ -212,9 +220,6 @@ ENV yarn /usr/bin/yarn
 
 FROM node AS hostedtoolcache
 
-ARG RUBY_VERSION=2.6.2
-ARG PYTHON3_VERSION=3.7.3
-
 RUN azcopy --recursive \
   --source https://vstsagenttools.blob.core.windows.net/tools/hostedtoolcache/ubuntu-1804 \
   --destination $AGENT_TOOLSDIRECTORY
@@ -223,36 +228,37 @@ RUN ORIGINAL_DIR=$(pwd) && \
   SETUP_SCRIPTS=$(find $AGENT_TOOLSDIRECTORY -name setup.sh) && \
   for SETUP_SCRIPT in $SETUP_SCRIPTS; do chmod +x $SETUP_SCRIPT && cd $(dirname $SETUP_SCRIPT) && ./$(basename $SETUP_SCRIPT); done;
 
-ENV PATH $PATH:/opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin
-ENV PATH $PATH:/opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin
+RUN ln -s $AGENT_TOOLSDIRECTORY/Ruby/$(ls $AGENT_TOOLSDIRECTORY/Ruby | sort | tail -1)/x64/bin /usr/local/bin/ruby
 
-ENV bundle /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/bundle
-ENV bundler /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/bundler
-ENV erb /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/erb
-ENV gem /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/gem
-ENV irb /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/irb
-ENV rake /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/rake
-ENV rdoc /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/rdoc
-ENV ri /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/ri
-ENV ruby /opt/hostedtoolcache/Ruby/${RUBY_VERSION}/x64/bin/ruby
+ENV bundle /usr/local/bin/ruby/bundle
+ENV bundler /usr/local/bin/ruby/bundler
+ENV erb /usr/local/bin/ruby/erb
+ENV gem /usr/local/bin/ruby/gem
+ENV irb /usr/local/bin/ruby/irb
+ENV rake /usr/local/bin/ruby/rake
+ENV rdoc /usr/local/bin/ruby/rdoc
+ENV ri /usr/local/bin/ruby/ri
+ENV ruby /usr/local/bin/ruby/ruby
+ENV PATH $PATH:/usr/local/bin/ruby
 
-ENV pip /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/pip
-ENV pip3 /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/pip3
-ENV python /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/python
-ENV python3 /opt/hostedtoolcache/Python/${PYTHON3_VERSION}/x64/bin/python3
+RUN ln -s $AGENT_TOOLSDIRECTORY/Python/$(ls $AGENT_TOOLSDIRECTORY/Python | grep -e ^3. | sort | tail -1)/x64/bin /usr/local/bin/python3
 
-ENV pip2 /usr/local/bin/pip2
-ENV python2 /usr/local/bin/python2
+ENV pip /usr/local/bin/python3/pip
+ENV pip3 /usr/local/bin/python3/pip3
+ENV python /usr/local/bin/python3/python
+ENV python3 /usr/local/bin/python3/python3
+ENV PATH $PATH:/usr/local/bin/python3
 
-# Validate versions
-RUN if [ -z "$(type ruby 2>/dev/null)" ] || [ -z "$(type python3 2>/dev/null)" ]; then echo "Ruby versions: " && ls /opt/hostedtoolcache/Ruby && echo "Python versions: " && ls /opt/hostedtoolcache/Python && exit 1; fi && \
-  ln -s /opt/hostedtoolcache/Python/$(ls /opt/hostedtoolcache/Python | grep -e ^2. | sort | tail -1)/x64/bin/pip2 $pip2 && \
-  ln -s /opt/hostedtoolcache/Python/$(ls /opt/hostedtoolcache/Python | grep -e ^2. | sort | tail -1)/x64/bin/python2 $python2
+RUN ln -s $AGENT_TOOLSDIRECTORY/Python/$(ls $AGENT_TOOLSDIRECTORY/Python | grep -e ^2. | sort | tail -1)/x64/bin /usr/local/bin/python2
+
+ENV pip2 /usr/local/bin/python2/pip2
+ENV python2 /usr/local/bin/python2/python2
+ENV PATH $PATH:/usr/local/bin/python2
 
 # Pip3 tools
 FROM hostedtoolcache AS python_tools
 
-RUN pip3 install setuptools && pip3 install yq && pip3 install awscli
+RUN pip3 install setuptools yq awscli
 
 ENV yq /usr/local/bin/yq
 ENV xq /usr/local/bin/xq

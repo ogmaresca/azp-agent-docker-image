@@ -37,7 +37,7 @@ do
 	for (( INNER_ITERATOR = $ITERATOR + 1; INNER_ITERATOR < ${#TAG_VERSIONS_BASE[@]}; INNER_ITERATOR++ ))
 	do
 		BASE_TAG_VERSION+="-${TAG_VERSIONS_BASE[$INNER_ITERATOR]}"
-		#TAG_VERSIONS+=($BASE_TAG_VERSION)
+		TAG_VERSIONS+=($BASE_TAG_VERSION)
 	done
 done
 
@@ -70,7 +70,8 @@ do
 	
 	if [ -z "$FIRST_ARG" ] || [ "$FIRST_ARG" == "$IMAGE_TAG" ]
 	then
-		TAGS_TO_UPLOAD=(
+		TAGS_TO_RMI=(
+			$DEV_IMAGE_TAG
 			$FULL_IMAGE_TAG
 			$SHORT_IMAGE_TAG
 			$SHORTEST_IMAGE_TAG
@@ -78,7 +79,7 @@ do
 
 		if [ "$IMAGE_TAG" == "standard" ]
 		then
-			TAGS_TO_UPLOAD+=(
+			TAGS_TO_RMI+=(
 				"${DISTRO}-${DISTRO_VERSION}-${AZP_AGENT_IMAGE_VERSION}"
 				"${DISTRO}-${DISTRO_VERSION}"
 				$DISTRO
@@ -86,43 +87,15 @@ do
 			)
 		fi
 
-		echo "Uploading azp-agent: [${TAGS_TO_UPLOAD[@]}]"
+		echo "Cleaning azp-agent: [${TAGS_TO_RMI[@]}]"
 
-		for TAG_TO_UPLOAD in ${TAGS_TO_UPLOAD[@]}
+		for TAG_TO_RMI in ${TAGS_TO_RMI[@]}
 		do
-			if [ -z "$DRY_RUN" ]; then docker tag "${BUILD_IMAGE}:${DEV_IMAGE_TAG}" "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
-
-			if [ $? -ne 0 ]
-			then
-				exit $?
-			fi
+			if [ -z "$DRY_RUN" ]; then docker rmi "docker.io/${BUILD_IMAGE}:${TAG_TO_RMI}"; fi
 		done
 
-		for TAG_TO_UPLOAD in ${TAGS_TO_UPLOAD[@]}
-		do
-			if [ -z "$DRY_RUN" ]; then docker push "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
-
-			if [ $? -ne 0 ]
-			then
-				exit $?
-			fi
-		done
-
-		for TAG_TO_UPLOAD in ${TAGS_TO_UPLOAD[@]}
-		do
-			if [ "$TAG_TO_UPLOAD" != "$SHORT_IMAGE_TAG" ]
-			then
-				if [ -z "$DRY_RUN" ]; then docker rmi "docker.io/${BUILD_IMAGE}:${TAG_TO_UPLOAD}"; fi
-
-				if [ $? -ne 0 ]
-				then
-					exit $?
-				fi
-			fi
-		done
-
-		echo "Finished uploading azp-agent: [${TAGS_TO_UPLOAD[@]}]"
+		echo "Finished cleaning azp-agent: [${TAGS_TO_RMI[@]}]"
 	else
-		echo "Not pushing ${BUILD_IMAGE}:$FULL_IMAGE_TAG - only pushing $FIRST_ARG"
+		echo "Not cleaning ${BUILD_IMAGE}:$FULL_IMAGE_TAG - only cleaning $FIRST_ARG"
 	fi
 done

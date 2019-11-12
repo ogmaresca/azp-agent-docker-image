@@ -5,7 +5,7 @@ ARG DISTRO=ubuntu
 ARG DISTRO_VERSION=18.04
 ARG DISTRO_FRIENDLY=bionic
 
-ARG GO_VERSION=1.12.7
+ARG GO_VERSION=1.13.4
 
 FROM docker.io/golang:${GO_VERSION} AS golang_official
 
@@ -32,5 +32,6 @@ RUN go get -u golang.org/x/lint/golint
 
 # Cleanup
 FROM gotools AS final
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* && rm -rf /etc/apt/sources.list.d/*
 
